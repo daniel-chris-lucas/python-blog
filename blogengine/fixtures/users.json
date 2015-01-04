@@ -1,0 +1,20 @@
+[
+{
+  "pk": 1,
+  "fields": {
+    "last_login": "2015-01-03T22:04:52.824Z",
+    "email": "daniel.chris.lucas@gmail.com",
+    "last_name": "",
+    "groups": [],
+    "username": "dan",
+    "is_superuser": true,
+    "user_permissions": [],
+    "is_staff": true,
+    "date_joined": "2015-01-02T23:17:08.314Z",
+    "password": "pbkdf2_sha256$12000$KYIRV5J8RtTl$bW3X7Mn6HaPqwojYJGXfSjic9eeWMa4xWEDDq4FMAf4=",
+    "first_name": "",
+    "is_active": true
+  },
+  "model": "auth.user"
+}
+]
