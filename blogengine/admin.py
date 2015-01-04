@@ -1,3 +1,4 @@
+import blogengine.models
 from django.contrib import admin
 
-# Register your models here.
+admin.site.register(blogengine.models.Post)
