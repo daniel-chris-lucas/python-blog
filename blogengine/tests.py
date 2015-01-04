@@ -1,6 +1,7 @@
 from django.test import TestCase, LiveServerTestCase, Client
 from django.utils import timezone
 from blogengine.models import Post
+import markdown
 
 
 class PostTest(TestCase):
@@ -178,7 +179,7 @@ class PostViewTest(LiveServerTestCase):
         # Create the post
         post = Post()
         post.title = 'My first post'
-        post.text = 'This is my first blog post'
+        post.text = 'This is [my first blog post](http://localhost:8000/)'
         post.pub_date = timezone.now()
         post.save()
 
@@ -194,9 +195,12 @@ class PostViewTest(LiveServerTestCase):
         self.assertContains(response, post.title)
 
         # Check the post text is in the response
-        self.assertContains(response, post.text)
+        self.assertContains(response, markdown.markdown(post.text))
 
         # Check the post date is in the response
         self.assertContains(response, str(post.pub_date.year))
         self.assertContains(response, post.pub_date.strftime('%b'))
         self.assertContains(response, str(post.pub_date.day))
+
+        # Check that linked is marked up properly
+        self.assertContains(response, '<a href="http://localhost:8000/">my first blog post</a>')
