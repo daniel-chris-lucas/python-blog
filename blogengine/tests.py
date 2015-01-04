@@ -36,12 +36,12 @@ class PostTest(TestCase):
 class AdminTest(LiveServerTestCase):
     fixtures = ['users.json']
 
-    def test_login(self):
-        # Create client
-        c = Client()
+    def setUp(self):
+        self.client = Client()
 
+    def test_login(self):
         # Get login page
-        response = c.get('/admin/login/?next=/admin/')
+        response = self.client.get('/admin/login/?next=/admin/')
 
         # Check response code
         self.assertEqual(response.status_code, 200)
@@ -50,34 +50,31 @@ class AdminTest(LiveServerTestCase):
         self.assertContains(response, 'Log in')
 
         # Log the user in
-        c.login(username="dan", password="secret")
+        self.client.login(username="dan", password="secret")
 
         # Check response code
-        response = c.get('/admin/')
+        response = self.client.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
         # Check for 'Log out' in response
         self.assertContains(response, 'Log out')
 
     def test_logout(self):
-        # Create client
-        c = Client()
-
         # Log in
-        c.login(username="dan", password="secret")
+        self.client.login(username="dan", password="secret")
 
         # Check response code
-        response = c.get('/admin/')
+        response = self.client.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
         # Check 'Log out' in response
         self.assertContains(response, 'Log out')
 
         # Log out
-        c.logout()
+        self.client.logout()
 
         # Check response code
-        response = c.get('/admin/login/?next=/admin/')
+        response = self.client.get('/admin/login/?next=/admin/')
         self.assertEqual(response.status_code, 200)
 
         # Check for 'Log in' in response
