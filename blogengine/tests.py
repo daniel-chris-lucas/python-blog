@@ -247,3 +247,39 @@ class PostViewTest(BaseAcceptanceTest):
 
         # Check the linked is marked up properly
         self.assertContains(response, '<a href="http://localhost:8000/">my first blog post</a>')
+
+
+class FlatPageViewTest(BaseAcceptanceTest):
+    def test_create_flat_page(self):
+        # Create flat page
+        page = FlatPage()
+        page.url = '/about/'
+        page.title = 'About me'
+        page.content = 'All about me'
+        page.save()
+
+        # Add the site
+        page.sites.add(Site.objects.all()[0])
+        page.save()
+
+        # Check new page saved
+        all_pages = FlatPage.objects.all()
+        self.assertEqual(len(all_pages), 1)
+        only_page = all_pages[0]
+        self.assertEqual(only_page, page)
+
+        # Check data correct
+        self.assertEqual(only_page.url, '/about/')
+        self.assertEqual(only_page.title, 'About me')
+        self.assertEqual(only_page.content, 'All about me')
+
+        # Get URL
+        page_url = only_page.get_absolute_url()
+
+        # Get the page
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 200)
+
+        # Check title and content in the response
+        self.assertContains(response, 'About me')
+        self.assertContains(response, 'All about me')
