@@ -1,6 +1,6 @@
 from django.test import TestCase, LiveServerTestCase, Client
 from django.utils import timezone
-from blogengine.models import Post
+from blogengine.models import Post, Category
 import markdown
 from django.contrib.flatpages.models import FlatPage
 from django.contrib.sites.models import Site
@@ -8,7 +8,34 @@ from django.contrib.auth.models import User
 
 
 class PostTest(TestCase):
+    def test_create_category(self):
+        # Create the category
+        category = Category()
+
+        # Add the attributes
+        category.name = 'python'
+        category.description = 'The Python programming language'
+
+        # Save it
+        category.save()
+
+        # Check we can find it
+        all_categories = Category.objects.all()
+        self.assertEqual(len(all_categories), 1)
+        only_category = all_categories[0]
+        self.assertEqual(only_category, category)
+
+        # Check attributes
+        self.assertEqual(only_category.name, 'python')
+        self.assertEqual(only_category.description, 'The Python programming language')
+
     def test_create_post(self):
+        # Create the category
+        category = Category()
+        category.name = 'python'
+        category.description = 'The Python programming language'
+        category.save()
+
         # Create the author
         author = User.objects.create_user('testuser', 'user@example.com', 'password')
         author.save()
@@ -29,6 +56,7 @@ class PostTest(TestCase):
         post.pub_date = timezone.now()
         post.author = author
         post.site = site
+        post.category = category
 
         # Save it
         post.save()
@@ -53,6 +81,8 @@ class PostTest(TestCase):
         self.assertEquals(only_post.pub_date.second, post.pub_date.second)
         self.assertEqual(only_post.author.username, 'testuser')
         self.assertEqual(only_post.author.email, 'user@example.com')
+        self.assertEqual(only_post.category.name, 'python')
+        self.assertEqual(only_post.category.description, 'The Python programming language')
 
 
 class BaseAcceptanceTest(LiveServerTestCase):
@@ -222,9 +252,90 @@ class AdminTest(BaseAcceptanceTest):
         all_posts = Post.objects.all()
         self.assertEqual(len(all_posts), 0)
 
+    def test_create_category(self):
+        # Log in
+        self.client.login(username="dan", password="secret")
+
+        # Check response code
+        response = self.client.get('/admin/blogengine/category/add/')
+        self.assertEqual(response.status_code, 200)
+
+        # Create the new category
+        response = self.client.post('/admin/blogengine/category/add/', {
+            'name': 'python',
+            'description': 'The python programming language'
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+
+        # Check if added successfully
+        self.assertContains(response, 'added successfully')
+
+        # Check new category now in database
+        all_categories = Category.objects.all()
+        self.assertEqual(len(all_categories), 1)
+
+    def test_edit_category(self):
+        # Create the category
+        category = Category()
+        category.name = 'python'
+        category.description = 'The Python programming language'
+        category.save()
+
+        # Log in
+        self.client.login(username='dan', password='secret')
+
+        # Edit the category
+        response = self.client.post('/admin/blogengine/category/3/', {
+            'name': 'perl',
+            'description': 'The Perl programming language'
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+
+        # Check if changed successfully
+        self.assertContains(response, 'changed successfully')
+
+        # Check category amended
+        all_categories = Category.objects.all()
+        self.assertEqual(len(all_categories), 1)
+        only_category = all_categories[0]
+        self.assertEqual(only_category.name, 'perl')
+        self.assertEqual(only_category.description, 'The Perl programming language')
+
+    def test_delete_category(self):
+        # Create the category
+        category = Category()
+        category.name = 'python'
+        category.description = 'The Python programming language'
+        category.save()
+
+        # Log in
+        self.client.login(username='dan', password='secret')
+
+        # Delete the category
+        response = self.client.post('/admin/blogengine/category/2/delete/', {
+            'post': 'yes'
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+
+        # Check deleted successfully
+        self.assertContains(response, 'deleted successfully')
+
+        # Check category deleted
+        all_categories = Category.objects.all()
+        self.assertEqual(len(all_categories), 0)
+
 
 class PostViewTest(BaseAcceptanceTest):
     def test_index(self):
+        # Create the category
+        category = Category()
+        category.name = 'python'
+        category.description = 'The Python programming language'
+        category.save()
+
         # Create the author
         author = User.objects.create_user('testuser', 'user@example.com', 'password')
         author.save()
@@ -243,6 +354,7 @@ class PostViewTest(BaseAcceptanceTest):
         post.pub_date = timezone.now()
         post.author = author
         post.site = site
+        post.category = category
         post.save()
 
         # Check new post saved
@@ -268,6 +380,12 @@ class PostViewTest(BaseAcceptanceTest):
         self.assertContains(response, '<a href="http://localhost:8000/">my first blog post</a>')
 
     def test_post_page(self):
+        # Create the category
+        category = Category()
+        category.name = 'python'
+        category.description = 'The Python programming language'
+        category.save()
+
         # Create the author
         author = User.objects.create_user('testuser', 'user@example.com', 'password')
         author.save()
@@ -286,6 +404,7 @@ class PostViewTest(BaseAcceptanceTest):
         post.pub_date = timezone.now()
         post.author = author
         post.site = site
+        post.category = category
         post.save()
 
         # Check new post saved
