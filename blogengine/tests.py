@@ -371,6 +371,9 @@ class PostViewTest(BaseAcceptanceTest):
         # Check the post text is in the response
         self.assertContains(response, markdown.markdown(post.text))
 
+        # Check the post category is in the response
+        self.assertContains(response, post.category.name)
+
         # Check the post date is in the response
         self.assertContains(response, str(post.pub_date.year))
         self.assertContains(response, post.pub_date.strftime('%b'))
@@ -426,6 +429,9 @@ class PostViewTest(BaseAcceptanceTest):
         # Check the post text is in the response
         self.assertContains(response, markdown.markdown(post.text))
 
+        # Check the post category is in the response
+        self.assertContains(response, post.category.name)
+
         # Check the post date is in the response
         self.assertContains(response, post.pub_date.year)
         self.assertContains(response, post.pub_date.strftime('%b'))
@@ -433,6 +439,60 @@ class PostViewTest(BaseAcceptanceTest):
 
         # Check the linked is marked up properly
         self.assertContains(response, '<a href="http://localhost:8000/">my first blog post</a>')
+
+    def test_category_page(self):
+        # Create the category
+        category = Category()
+        category.name = 'python'
+        category.description = 'The Python programming language'
+        category.save()
+
+        # Create the author
+        author = User.objects.create_user('testuser', 'user@example.com', 'password')
+        author.save()
+
+        # Create the site
+        site = Site()
+        site.name = 'example.com'
+        site.domain = 'example.com'
+        site.save()
+
+        # Create the post
+        post = Post()
+        post.title = 'This is [my first blog post](http://locahost:8000/)'
+        post.slug = 'my-first-post'
+        post.pub_date = timezone.now()
+        post.author = author
+        post.site = site
+        post.category = category
+        post.save()
+
+        # Check new post saved
+        all_posts = Post.objects.all()
+        self.assertEqual(len(all_posts), 1)
+        only_post = all_posts[0]
+        self.assertEqual(only_post, post)
+
+        # Get the category URL
+        category_url = post.category.get_absolute_url()
+
+        # Fetch the category
+        response = self.client.get(category_url)
+        self.assertEqual(response.status_code, 200)
+
+        # Check the category name is in the response
+        self.assertContains(response, post.category.name)
+
+        # Check the post text is in the response
+        self.assertContains(response, markdown.markdown(post.text))
+
+        # Check the post date is in the response
+        self.assertContains(response, str(post.pub_date.year))
+        self.assertContains(response, post.pub_date.strftime('%b'))
+        self.assertContains(response, str(post.pub_date.day))
+
+        # Check the link is marked up properly
+        self.assertContains(response, '<a href="http://locahost:8000/">my first blog post</a>')
 
 
 class FlatPageViewTest(BaseAcceptanceTest):
